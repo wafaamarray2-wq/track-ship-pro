@@ -14,18 +14,37 @@ import { PageHeader } from "@/components/common/page-header";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_console/shipments/new")({
   head: () => ({
     meta: [
       { title: "Create shipment — TrackFlow" },
-      { name: "description", content: "Create a new shipment with merchant, recipient, package, and route details." },
+      {
+        name: "description",
+        content: "Create a new shipment with merchant, recipient, package, and route details.",
+      },
       { property: "og:title", content: "Create shipment — TrackFlow" },
-      { property: "og:description", content: "Register a new shipment and start tracking it immediately." },
+      {
+        property: "og:description",
+        content: "Register a new shipment and start tracking it immediately.",
+      },
     ],
   }),
   component: CreateShipmentPage,
@@ -45,7 +64,10 @@ const schema = z.object({
   recipientPhone: z.string().trim().min(7, "Enter a valid phone number").max(30),
   recipientEmail: z.string().trim().email("Enter a valid email address").max(255),
   packageDescription: z.string().trim().min(3, "Describe the package contents").max(200),
-  weightKg: z.coerce.number().positive("Weight must be greater than 0").max(1000, "Weight must be under 1000 kg"),
+  weightKg: z.coerce
+    .number()
+    .positive("Weight must be greater than 0")
+    .max(1000, "Weight must be under 1000 kg"),
   referenceNumber: z.string().trim().max(60).optional(),
   origin: addressSchema,
   destination: addressSchema,
@@ -82,7 +104,10 @@ function CreateShipmentPage() {
   const queryClient = useQueryClient();
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const merchants = useQuery({ queryKey: ["merchants", "options"], queryFn: () => merchantsApi.options() });
+  const merchants = useQuery({
+    queryKey: ["merchants", "options"],
+    queryFn: () => merchantsApi.options(),
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -106,7 +131,9 @@ function CreateShipmentPage() {
     onSuccess: (shipment) => {
       void queryClient.invalidateQueries({ queryKey: ["shipments"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("Shipment created", { description: `Tracking number ${shipment.trackingNumber}` });
+      toast.success("Shipment created", {
+        description: `Tracking number ${shipment.trackingNumber}`,
+      });
       void navigate({ to: "/shipments/$shipmentId", params: { shipmentId: shipment.id } });
     },
     onError: (error: Error) => setApiError(error.message),
@@ -117,7 +144,11 @@ function CreateShipmentPage() {
     const parsed = schema.parse(values);
     mutation.mutate({
       merchantId: parsed.merchantId,
-      recipient: { name: parsed.recipientName, phone: parsed.recipientPhone, email: parsed.recipientEmail },
+      recipient: {
+        name: parsed.recipientName,
+        phone: parsed.recipientPhone,
+        email: parsed.recipientEmail,
+      },
       package: {
         description: parsed.packageDescription,
         weightKg: parsed.weightKg,
@@ -186,17 +217,25 @@ function CreateShipmentPage() {
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={merchants.isPending ? "Loading merchants…" : "Select a merchant"} />
+                        <SelectValue
+                          placeholder={
+                            merchants.isPending ? "Loading merchants…" : "Select a merchant"
+                          }
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {(merchants.data ?? [])
                         .filter((merchant) => merchant.isActive)
-                        .map((merchant) => (
-                          <SelectItem key={merchant.id} value={merchant.id}>
-                            {merchant.companyName}
-                          </SelectItem>
-                        ))}
+                        .map((merchant) => {
+                          console.log("MERCHANT:", merchant);
+
+                          return (
+                            <SelectItem key={merchant.id} value={String(merchant.id)}>
+                              {merchant.companyName}
+                            </SelectItem>
+                          );
+                        })}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -318,7 +357,11 @@ function CreateShipmentPage() {
                 <FormItem className="sm:col-span-2">
                   <FormLabel>Delivery notes (optional)</FormLabel>
                   <FormControl>
-                    <Textarea rows={3} placeholder="Access codes, drop-off instructions…" {...field} />
+                    <Textarea
+                      rows={3}
+                      placeholder="Access codes, drop-off instructions…"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -337,7 +380,11 @@ function CreateShipmentPage() {
                 "Create shipment"
               )}
             </Button>
-            <Button type="button" variant="ghost" onClick={() => void navigate({ to: "/shipments" })}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => void navigate({ to: "/shipments" })}
+            >
               Cancel
             </Button>
           </div>

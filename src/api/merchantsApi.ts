@@ -1,5 +1,4 @@
-import { ApiError, mockResponse } from "./client";
-import { merchants } from "./mock/store";
+import { request } from "./client";
 import type { Merchant, MerchantRequest, Paged } from "./types";
 
 export interface MerchantQuery {
@@ -9,68 +8,129 @@ export interface MerchantQuery {
   pageSize?: number | undefined;
 }
 
+/* =========================
+   Backend response types
+========================= */
+
+interface BackendMerchantListItem {
+  id: number;
+  merchantCode: string;
+  name: string;
+  contactName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface BackendMerchant {
+  id: number;
+  merchantCode: string;
+  name: string;
+  contactName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+/* =========================
+   Mapping
+========================= */
+
+function mapMerchant(merchant: BackendMerchant | BackendMerchantListItem): Merchant {
+  return {
+    id: String(merchant.id),
+    companyName: merchant.name,
+    contactName: merchant.contactName ?? "",
+    email: merchant.email ?? "",
+    phone: merchant.phone ?? "",
+    isActive: merchant.isActive,
+    shipmentCount: 0,
+    createdAt: merchant.createdAt,
+  };
+}
+
+/* =========================
+   Merchants API
+========================= */
+
 export const merchantsApi = {
   /** GET /api/merchants */
   async list(query: MerchantQuery = {}): Promise<Paged<Merchant>> {
-    return mockResponse(() => {
-      const search = (query.search ?? "").trim().toLowerCase();
-      let items = merchants.filter((m) => {
-        if (search && !`${m.companyName} ${m.contactName} ${m.email}`.toLowerCase().includes(search)) return false;
-        if (query.status === "active" && !m.isActive) return false;
-        if (query.status === "inactive" && m.isActive) return false;
-        return true;
-      });
-      items = [...items].sort((a, b) => a.companyName.localeCompare(b.companyName));
-      const page = query.page ?? 1;
-      const pageSize = query.pageSize ?? 10;
-      return {
-        items: items.slice((page - 1) * pageSize, page * pageSize),
-        page,
-        pageSize,
-        totalCount: items.length,
-        totalPages: Math.max(1, Math.ceil(items.length / pageSize)),
-      };
-    });
+    const data = await request<BackendMerchantListItem[]>("/merchants");
+
+    const detailedMerchants = await Promise.all(
+      data.map((merchant) => request<BackendMerchant>(`/merchants/${merchant.id}`)),
+    );
+
+    let items = detailedMerchants.map(mapMerchant);
+
+    const search = (query.search ?? "").trim().toLowerCase();
+
+    if (search) {
+      items = items.filter((merchant) =>
+        `${merchant.companyName} ${merchant.contactName} ${merchant.email}`
+          .toLowerCase()
+          .includes(search),
+      );
+    }
+
+    if (query.status === "active") {
+      items = items.filter((merchant) => merchant.isActive);
+    }
+
+    if (query.status === "inactive") {
+      items = items.filter((merchant) => !merchant.isActive);
+    }
+
+    items = [...items].sort((a, b) => a.companyName.localeCompare(b.companyName));
+
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 10;
+
+    return {
+      items: items.slice((page - 1) * pageSize, page * pageSize),
+
+      page,
+      pageSize,
+
+      totalCount: items.length,
+
+      totalPages: items.length === 0 ? 0 : Math.ceil(items.length / pageSize),
+    };
   },
 
-  /** GET /api/merchants (unpaged options for selects) */
+  /** GET /api/merchants - options for selects */
   async options(): Promise<Merchant[]> {
-    return mockResponse(() => [...merchants].sort((a, b) => a.companyName.localeCompare(b.companyName)), 200);
+    const data = await request<BackendMerchantListItem[]>("/merchants");
+    console.log("BACKEND MERCHANTS:", data);
+    return data
+      .map(mapMerchant)
+      .filter((merchant) => merchant.isActive)
+      .sort((a, b) => a.companyName.localeCompare(b.companyName));
   },
 
   /** GET /api/merchants/{id} */
   async getById(id: string): Promise<Merchant> {
-    return mockResponse(() => {
-      const merchant = merchants.find((m) => m.id === id);
-      if (!merchant) throw new ApiError("Merchant not found", 404);
-      return merchant;
-    }, 300);
+    const data = await request<BackendMerchant>(`/merchants/${id}`);
+
+    return mapMerchant(data);
   },
 
   /** POST /api/merchants */
   async create(payload: MerchantRequest): Promise<Merchant> {
-    return mockResponse(() => {
-      if (merchants.some((m) => m.email.toLowerCase() === payload.email.toLowerCase())) {
-        throw new ApiError("A merchant with this email already exists.", 409);
-      }
-      const merchant: Merchant = {
-        id: `mer_${(merchants.length + 1).toString().padStart(3, "0")}`,
-        ...payload,
-        shipmentCount: 0,
-        createdAt: new Date().toISOString(),
-      };
-      merchants.push(merchant);
-      return merchant;
-    }, 600);
-  },
+    const data = await request<BackendMerchant>("/merchants", {
+      method: "POST",
+      body: JSON.stringify({
+        name: payload.companyName,
+        contactName: payload.contactName,
+        email: payload.email,
+        phone: payload.phone,
+        isActive: payload.isActive,
+      }),
+    });
 
-  /** PUT /api/merchants/{id} */
-  async update(id: string, payload: MerchantRequest): Promise<Merchant> {
-    return mockResponse(() => {
-      const merchant = merchants.find((m) => m.id === id);
-      if (!merchant) throw new ApiError("Merchant not found", 404);
-      Object.assign(merchant, payload);
-      return merchant;
-    }, 600);
+    return mapMerchant(data);
   },
 };

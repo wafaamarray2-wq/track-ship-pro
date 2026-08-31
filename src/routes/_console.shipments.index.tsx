@@ -4,7 +4,14 @@ import { ArrowDownUp, Plus, Search, X } from "lucide-react";
 
 import { merchantsApi } from "@/api/merchantsApi";
 import { shipmentsApi } from "@/api/shipmentsApi";
-import { RISK_LEVELS, SHIPMENT_STATUSES, type RiskLevel, type ShipmentQuery, type ShipmentSortField, type ShipmentStatus } from "@/api/types";
+import {
+  RISK_LEVELS,
+  SHIPMENT_STATUSES,
+  type RiskLevel,
+  type ShipmentQuery,
+  type ShipmentSortField,
+  type ShipmentStatus,
+} from "@/api/types";
 import { RiskBadge, StatusBadge } from "@/components/common/badges";
 import { PageHeader } from "@/components/common/page-header";
 import { EmptyState, ErrorState, TableSkeletonRows } from "@/components/common/states";
@@ -12,8 +19,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Permission, useAuth } from "@/lib/auth";
 import { formatDate, formatRelative } from "@/lib/format";
 
@@ -36,9 +56,15 @@ export const Route = createFileRoute("/_console/shipments/")({
   head: () => ({
     meta: [
       { title: "Shipments — TrackFlow" },
-      { name: "description", content: "Search, filter, and manage every shipment across your delivery network." },
+      {
+        name: "description",
+        content: "Search, filter, and manage every shipment across your delivery network.",
+      },
       { property: "og:title", content: "Shipments — TrackFlow" },
-      { property: "og:description", content: "Filter shipments by status, merchant, risk level, and delivery date." },
+      {
+        property: "og:description",
+        content: "Filter shipments by status, merchant, risk level, and delivery date.",
+      },
     ],
   }),
   validateSearch: (raw: Record<string, unknown>): ShipmentSearch => {
@@ -56,9 +82,9 @@ export const Route = createFileRoute("/_console/shipments/")({
       riskLevel: str("riskLevel"),
       fromDate: str("fromDate"),
       toDate: str("toDate"),
-      sortBy: (["lastUpdatedAt", "expectedDeliveryDate", "trackingNumber", "status"] as string[]).includes(
-        sortBy ?? "",
-      )
+      sortBy: (
+        ["lastUpdatedAt", "expectedDeliveryDate", "trackingNumber", "status"] as string[]
+      ).includes(sortBy ?? "")
         ? (sortBy as ShipmentSortField)
         : undefined,
       sortDir: sortDir === "asc" || sortDir === "desc" ? sortDir : undefined,
@@ -93,14 +119,22 @@ function ShipmentsPage() {
     placeholderData: keepPreviousData,
   });
 
-  const merchants = useQuery({ queryKey: ["merchants", "options"], queryFn: () => merchantsApi.options() });
+  const merchants = useQuery({
+    queryKey: ["merchants", "options"],
+    queryFn: () => merchantsApi.options(),
+  });
 
   const update = (patch: Partial<ShipmentSearch>) => {
     void navigate({ to: ".", search: { ...search, ...patch, page: patch.page } });
   };
 
   const hasFilters = Boolean(
-    search.search || search.status || search.merchantId || search.riskLevel || search.fromDate || search.toDate,
+    search.search ||
+    search.status ||
+    search.merchantId ||
+    search.riskLevel ||
+    search.fromDate ||
+    search.toDate,
   );
 
   const toggleSort = (field: ShipmentSortField) => {
@@ -265,36 +299,56 @@ function ShipmentsPage() {
       <Card>
         <CardContent className="p-0">
           {shipments.isError ? (
-            <ErrorState description="Shipments could not be loaded." onRetry={() => shipments.refetch()} />
+            <ErrorState
+              description="Shipments could not be loaded."
+              onRetry={() => shipments.refetch()}
+            />
           ) : (
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="min-w-[1100px]">
                 <TableHeader>
                   <TableRow>
                     {sortableHead("trackingNumber", "Tracking number")}
+
                     <TableHead>Merchant</TableHead>
+
+                    <TableHead>Driver</TableHead>
+
                     <TableHead>Recipient</TableHead>
-                    <TableHead>Origin</TableHead>
+
                     <TableHead>Destination</TableHead>
+
                     {sortableHead("status", "Status")}
+
                     {sortableHead("expectedDeliveryDate", "Expected delivery")}
+
                     <TableHead>Risk</TableHead>
-                    {sortableHead("lastUpdatedAt", "Last updated")}
-                    <TableHead className="text-right">Actions</TableHead>
+
+                    <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
                   {shipments.isPending ? (
-                    <TableSkeletonRows rows={8} columns={10} />
+                    <TableSkeletonRows rows={8} columns={9} />
                   ) : shipments.data.items.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="p-0">
+                      <TableCell colSpan={9} className="p-0">
                         <EmptyState
                           title="No shipments match these filters"
                           description="Try widening your search or clearing the active filters."
                           action={
                             hasFilters ? (
-                              <Button variant="outline" size="sm" onClick={() => void navigate({ to: ".", search: () => ({}) })}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  void navigate({
+                                    to: ".",
+                                    search: () => ({}),
+                                  })
+                                }
+                              >
                                 Clear filters
                               </Button>
                             ) : null
@@ -311,34 +365,61 @@ function ShipmentsPage() {
                         aria-label={`Open shipment ${shipment.trackingNumber}`}
                         className="cursor-pointer"
                         onClick={() =>
-                          void rowNavigate({ to: "/shipments/$shipmentId", params: { shipmentId: shipment.id } })
+                          void rowNavigate({
+                            to: "/shipments/$shipmentId",
+                            params: { shipmentId: shipment.id },
+                          })
                         }
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
-                            void rowNavigate({ to: "/shipments/$shipmentId", params: { shipmentId: shipment.id } });
+
+                            void rowNavigate({
+                              to: "/shipments/$shipmentId",
+                              params: { shipmentId: shipment.id },
+                            });
                           }
                         }}
                       >
-                        <TableCell className="font-mono text-sm">{shipment.trackingNumber}</TableCell>
-                        <TableCell className="max-w-[180px] truncate">{shipment.merchantName}</TableCell>
-                        <TableCell className="max-w-[160px] truncate">{shipment.recipientName}</TableCell>
-                        <TableCell className="whitespace-nowrap text-muted-foreground">{shipment.originCity}</TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {shipment.trackingNumber}
+                        </TableCell>
+
+                        <TableCell className="max-w-[180px] truncate">
+                          {shipment.merchantName}
+                        </TableCell>
+
+                        <TableCell className="max-w-[160px] truncate">
+                          {shipment.driverName ?? "Unassigned"}
+                        </TableCell>
+
+                        <TableCell className="max-w-[160px] truncate">
+                          {shipment.recipientName}
+                        </TableCell>
+
                         <TableCell className="whitespace-nowrap text-muted-foreground">
                           {shipment.destinationCity}
                         </TableCell>
+
                         <TableCell>
                           <StatusBadge status={shipment.status} />
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">{formatDate(shipment.expectedDeliveryDate)}</TableCell>
+
+                        <TableCell className="whitespace-nowrap">
+                          {formatDate(shipment.expectedDeliveryDate)}
+                        </TableCell>
+
                         <TableCell>
                           <RiskBadge risk={shipment.riskLevel} />
                         </TableCell>
-                        <TableCell className="whitespace-nowrap text-muted-foreground">
-                          {formatRelative(shipment.lastUpdatedAt)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button asChild variant="ghost" size="sm" onClick={(event) => event.stopPropagation()}>
+
+                        <TableCell className="text-center">
+                          <Button
+                            asChild
+                            variant="ghost"
+                            size="sm"
+                            onClick={(event) => event.stopPropagation()}
+                          >
                             <Link to="/shipments/$shipmentId" params={{ shipmentId: shipment.id }}>
                               View
                             </Link>
@@ -372,7 +453,12 @@ function ShipmentsPage() {
           <span className="text-sm text-muted-foreground">
             Page {page} of {totalPages}
           </span>
-          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => update({ page: page + 1 })}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => update({ page: page + 1 })}
+          >
             Next
           </Button>
         </div>

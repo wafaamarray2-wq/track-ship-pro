@@ -1,6 +1,6 @@
-import { ApiError, mockResponse } from "./client";
-import { merchants, recalculate, shipments } from "./mock/store";
+import { request } from "./client";
 import { ShipmentStatus } from "./types";
+
 import type {
   CreateShipmentEventRequest,
   CreateShipmentRequest,
@@ -11,168 +11,449 @@ import type {
   TrackingEvent,
 } from "./types";
 
-function toListItem(shipment: Shipment): ShipmentListItem {
-  const {
-    id,
-    trackingNumber,
-    merchantId,
-    merchantName,
-    recipientName,
-    originCity,
-    destinationCity,
-    status,
-    expectedDeliveryDate,
-    riskLevel,
-    lastUpdatedAt,
-  } = shipment;
-  return {
-    id,
-    trackingNumber,
-    merchantId,
-    merchantName,
-    recipientName,
-    originCity,
-    destinationCity,
-    status,
-    expectedDeliveryDate,
-    riskLevel,
-    lastUpdatedAt,
+/* =========================
+   Backend response types
+========================= */
+
+interface BackendShipmentListItem {
+  id: number;
+  trackingNumber: string;
+  referenceNumber?: string | null;
+
+  merchantId: number;
+  merchantName: string;
+
+  recipientName: string;
+
+  originCity: string;
+  originCountry: string;
+
+  destinationCity: string;
+  destinationCountry: string;
+
+  currentStatus: string;
+
+  driverId?: number | null;
+  driverName?: string | null;
+
+  expectedDeliveryAt?: string | null;
+
+  createdAt: string;
+  updatedAt: string;
+
+  risk: {
+    level: string;
+    reason?: string | null;
   };
 }
 
-export function filterShipments(query: ShipmentQuery): Shipment[] {
-  const search = (query.search ?? "").trim().toLowerCase();
-  const filtered = shipments.filter((s) => {
-    if (search && !`${s.trackingNumber} ${s.recipientName}`.toLowerCase().includes(search)) return false;
-    if (query.status && s.status !== query.status) return false;
-    if (query.merchantId && s.merchantId !== query.merchantId) return false;
-    if (query.riskLevel && s.riskLevel !== query.riskLevel) return false;
-    if (query.fromDate && s.expectedDeliveryDate < query.fromDate) return false;
-    if (query.toDate && s.expectedDeliveryDate > `${query.toDate}T23:59:59.999Z`) return false;
-    return true;
-  });
+interface BackendShipment {
+  id: number;
+  trackingNumber: string;
+  referenceNumber?: string | null;
 
-  const sortBy = query.sortBy ?? "lastUpdatedAt";
-  const dir = query.sortDir === "asc" ? 1 : -1;
-  return filtered.sort((a, b) => String(a[sortBy]).localeCompare(String(b[sortBy])) * dir);
+  merchantId: number;
+  merchantCode: string;
+  merchantName: string;
+
+  driverId?: number | null;
+  driverCode?: string | null;
+  driverName?: string | null;
+
+  recipientName: string;
+  recipientPhone?: string | null;
+  recipientEmail?: string | null;
+
+  originAddress: string;
+  originCity: string;
+  originCountry: string;
+
+  destinationAddress: string;
+  destinationCity: string;
+  destinationCountry: string;
+
+  packageDescription?: string | null;
+  weight?: number | null;
+
+  currentStatus: string;
+
+  expectedDeliveryAt?: string | null;
+
+  createdAt: string;
+  updatedAt: string;
+
+  version: number;
+
+  risk: {
+    level: string;
+    reason?: string | null;
+  };
 }
 
+interface BackendPagedShipments {
+  items: BackendShipmentListItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+interface BackendShipmentEvent {
+  id: number;
+  status: string;
+  location?: string | null;
+  notes?: string | null;
+  occurredAt: string;
+  createdAt: string;
+  source: string;
+  createdByUserId?: number | null;
+}
+
+/* =========================
+   Mapping helpers
+========================= */
+
+function mapRiskLevel(level: string) {
+  return level as Shipment["riskLevel"];
+}
+
+function mapShipmentListItem(shipment: BackendShipmentListItem): ShipmentListItem {
+  return {
+    id: String(shipment.id),
+
+    trackingNumber: shipment.trackingNumber,
+
+    merchantId: String(shipment.merchantId),
+
+    merchantName: shipment.merchantName,
+    driverId: shipment.driverId ? String(shipment.driverId) : undefined,
+
+    driverName: shipment.driverName ?? undefined,
+
+    recipientName: shipment.recipientName,
+
+    originCity: `${shipment.originCity}, ${shipment.originCountry}`,
+
+    destinationCity: `${shipment.destinationCity}, ${shipment.destinationCountry}`,
+
+    status: shipment.currentStatus as ShipmentStatus,
+
+    expectedDeliveryDate: shipment.expectedDeliveryAt ?? "",
+
+    riskLevel: mapRiskLevel(shipment.risk.level),
+
+    lastUpdatedAt: shipment.updatedAt,
+  };
+}
+
+function mapTrackingEvent(event: BackendShipmentEvent, shipmentId: string): TrackingEvent {
+  return {
+    id: String(event.id),
+
+    shipmentId,
+
+    status: event.status as ShipmentStatus,
+
+    location: event.location ?? "",
+
+    occurredAt: event.occurredAt,
+
+    notes: event.notes ?? undefined,
+
+    createdBy: event.createdByUserId ? String(event.createdByUserId) : "",
+
+    source: event.source as TrackingEvent["source"],
+  };
+}
+
+function mapShipment(shipment: BackendShipment): Shipment {
+  const id = String(shipment.id);
+
+  return {
+    id,
+
+    trackingNumber: shipment.trackingNumber,
+
+    merchantId: String(shipment.merchantId),
+
+    merchantName: shipment.merchantName,
+
+    recipientName: shipment.recipientName,
+
+    originCity: `${shipment.originCity}, ${shipment.originCountry}`,
+
+    destinationCity: `${shipment.destinationCity}, ${shipment.destinationCountry}`,
+
+    status: shipment.currentStatus as ShipmentStatus,
+
+    expectedDeliveryDate: shipment.expectedDeliveryAt ?? "",
+
+    riskLevel: mapRiskLevel(shipment.risk.level),
+
+    lastUpdatedAt: shipment.updatedAt,
+
+    recipient: {
+      name: shipment.recipientName,
+      phone: shipment.recipientPhone ?? "",
+      email: shipment.recipientEmail ?? "",
+    },
+
+    origin: {
+      line1: shipment.originAddress,
+      city: shipment.originCity,
+      state: "",
+      postalCode: "",
+      country: shipment.originCountry,
+    },
+
+    destination: {
+      line1: shipment.destinationAddress,
+      city: shipment.destinationCity,
+      state: "",
+      postalCode: "",
+      country: shipment.destinationCountry,
+    },
+
+    package: {
+      description: shipment.packageDescription ?? "",
+      weightKg: shipment.weight ?? 0,
+    },
+
+    createdAt: shipment.createdAt,
+
+    createdBy: "",
+
+    updatedBy: "",
+
+    events: [],
+
+    intelligence: {
+      riskLevel: mapRiskLevel(shipment.risk.level),
+
+      summary: shipment.risk.reason ?? "",
+
+      factors: [],
+
+      hoursSinceLastMovement: 0,
+
+      expectedDeliveryVarianceHours: 0,
+
+      failedDeliveryAttempts: 0,
+
+      currentFacility: "",
+    },
+  };
+}
+
+function mapStatusToBackend(status: ShipmentStatus): number {
+  switch (status) {
+    case ShipmentStatus.Created:
+      return 1;
+
+    case ShipmentStatus.PickedUp:
+      return 3;
+
+    case ShipmentStatus.OnHold:
+      return 10;
+
+    case ShipmentStatus.Cancelled:
+      return 12;
+
+    case ShipmentStatus.Lost:
+      return 13;
+
+    case ShipmentStatus.Delivered:
+      return 8;
+
+    case ShipmentStatus.DeliveryFailed:
+      return 9;
+
+    case ShipmentStatus.ReturnedToSender:
+      return 11;
+
+    case ShipmentStatus.AtOriginFacility:
+      return 4;
+
+    case ShipmentStatus.InTransit:
+      return 5;
+
+    case ShipmentStatus.AtDestinationFacility:
+      return 6;
+
+    case ShipmentStatus.OutForDelivery:
+      return 7;
+
+    default:
+      throw new Error(`Unsupported shipment status: ${status}`);
+  }
+}
+
+/* =========================
+   Shipments API
+========================= */
+
 export const shipmentsApi = {
-  /** GET /api/shipments */
+  /* GET /api/shipments */
+
   async list(query: ShipmentQuery = {}): Promise<Paged<ShipmentListItem>> {
-    return mockResponse(() => {
-      const items = filterShipments(query);
-      const page = query.page ?? 1;
-      const pageSize = query.pageSize ?? 10;
-      return {
-        items: items.slice((page - 1) * pageSize, page * pageSize).map(toListItem),
-        page,
-        pageSize,
-        totalCount: items.length,
-        totalPages: Math.max(1, Math.ceil(items.length / pageSize)),
-      };
-    });
+    const params = new URLSearchParams();
+
+    if (query.search) {
+      params.set("Search", query.search);
+    }
+
+    if (query.status) {
+      params.set("Status", query.status);
+    }
+
+    if (query.merchantId) {
+      params.set("MerchantId", query.merchantId);
+    }
+
+    if (query.fromDate) {
+      params.set("FromDate", query.fromDate);
+    }
+
+    if (query.toDate) {
+      params.set("ToDate", query.toDate);
+    }
+
+    params.set("Page", String(query.page ?? 1));
+
+    params.set("PageSize", String(query.pageSize ?? 10));
+
+    const queryString = params.toString();
+
+    const data = await request<BackendPagedShipments>(
+      `/shipments${queryString ? `?${queryString}` : ""}`,
+    );
+    console.log("SHIPMENTS FROM BACKEND:", data);
+    console.log("FIRST SHIPMENT:", data.items[0]);
+    return {
+      items: data.items.map(mapShipmentListItem),
+
+      page: data.page,
+
+      pageSize: data.pageSize,
+
+      totalCount: data.totalCount,
+
+      totalPages: data.totalPages,
+    };
   },
 
-  /** GET /api/shipments/{id} */
+  /* GET /api/shipments/{id} */
+
   async getById(id: string): Promise<Shipment> {
-    return mockResponse(() => {
-      const shipment = shipments.find((s) => s.id === id || s.trackingNumber === id);
-      if (!shipment) throw new ApiError("Shipment not found", 404);
-      return structuredClone(shipment);
-    }, 400);
+    const data = await request<BackendShipment>(`/shipments/${id}`);
+
+    return mapShipment(data);
   },
 
-  /** POST /api/shipments */
+  /* POST /api/shipments */
+
   async create(payload: CreateShipmentRequest): Promise<Shipment> {
-    return mockResponse(() => {
-      const merchant = merchants.find((m) => m.id === payload.merchantId);
-      if (!merchant) throw new ApiError("The selected merchant could not be found.", 400);
+    const backendPayload = {
+      merchantId: Number(payload.merchantId),
 
-      const id = `shp_${(shipments.length + 1).toString().padStart(4, "0")}`;
-      const now = new Date().toISOString();
-      const event: TrackingEvent = {
-        id: `${id}_evt_1`,
-        shipmentId: id,
-        status: ShipmentStatus.Created,
-        location: `${payload.origin.city}, ${payload.origin.state}`,
-        occurredAt: now,
-        notes: "Shipment record created.",
-        createdBy: "operator@trackflow.io",
-        source: "Operator",
-      };
+      recipientName: payload.recipient.name,
 
-      const shipment = {
-        id,
-        trackingNumber: `TF${Math.floor(700000000 + Math.random() * 99999999)}`,
-        merchantId: merchant.id,
-        merchantName: merchant.companyName,
-        recipientName: payload.recipient.name,
-        originCity: `${payload.origin.city}, ${payload.origin.state}`,
-        destinationCity: `${payload.destination.city}, ${payload.destination.state}`,
-        status: ShipmentStatus.Created,
-        expectedDeliveryDate: payload.expectedDeliveryDate,
-        riskLevel: "Normal",
-        lastUpdatedAt: now,
-        recipient: payload.recipient,
-        origin: payload.origin,
-        destination: payload.destination,
-        package: payload.package,
-        notes: payload.notes,
-        createdAt: now,
-        createdBy: "operator@trackflow.io",
-        updatedBy: "operator@trackflow.io",
-        events: [event],
-      } as Shipment;
+      recipientPhone: payload.recipient.phone,
 
-      shipments.unshift(shipment);
-      merchant.shipmentCount += 1;
-      recalculate(shipment);
-      return structuredClone(shipment);
-    }, 800);
+      recipientEmail: payload.recipient.email,
+
+      originAddress: payload.origin.line1,
+
+      originCity: payload.origin.city,
+
+      originCountry: payload.origin.country,
+
+      destinationAddress: payload.destination.line1,
+
+      destinationCity: payload.destination.city,
+
+      destinationCountry: payload.destination.country,
+
+      packageDescription: payload.package.description,
+
+      weight: payload.package.weightKg,
+
+      expectedDeliveryAt: payload.expectedDeliveryDate,
+
+      referenceNumber: payload.package.referenceNumber,
+
+      notes: payload.notes,
+    };
+
+    console.log("BACKEND PAYLOAD:", backendPayload);
+    const data = await request<BackendShipment>("/shipments", {
+      method: "POST",
+
+      body: JSON.stringify(backendPayload),
+    });
+
+    return mapShipment(data);
   },
 
-  /** POST /api/shipments/{id}/events */
+  /* PATCH /api/shipments/{id}/status */
+
   async addEvent(id: string, payload: CreateShipmentEventRequest): Promise<Shipment> {
-    return mockResponse(() => {
-      const shipment = shipments.find((s) => s.id === id);
-      if (!shipment) throw new ApiError("Shipment not found", 404);
-      shipment.events.push({
-        id: `${id}_evt_${shipment.events.length + 1}`,
-        shipmentId: id,
-        status: payload.status,
+    const data = await request<BackendShipment>(`/shipments/${id}/status`, {
+      method: "PATCH",
+
+      body: JSON.stringify({
+        status: mapStatusToBackend(payload.status),
+
         location: payload.location,
-        occurredAt: payload.occurredAt,
+
         notes: payload.notes,
-        createdBy: "operator@trackflow.io",
-        source: "Operator",
-      });
-      shipment.updatedBy = "operator@trackflow.io";
-      recalculate(shipment);
-      return structuredClone(shipment);
-    }, 700);
+
+        occurredAt: payload.occurredAt,
+      }),
+    });
+
+    return mapShipment(data);
   },
 
-  /** POST /api/shipments/{id}/cancel */
-  async cancel(id: string, reason?: string): Promise<Shipment> {
-    return mockResponse(() => {
-      const shipment = shipments.find((s) => s.id === id);
-      if (!shipment) throw new ApiError("Shipment not found", 404);
-      if (shipment.status === ShipmentStatus.Delivered) {
-        throw new ApiError("A delivered shipment cannot be cancelled.", 409);
-      }
-      shipment.events.push({
-        id: `${id}_evt_${shipment.events.length + 1}`,
-        shipmentId: id,
-        status: ShipmentStatus.Cancelled,
-        location: shipment.events[shipment.events.length - 1]?.location ?? shipment.originCity,
-        occurredAt: new Date().toISOString(),
-        notes: reason ?? "Cancelled by operator.",
-        createdBy: "operator@trackflow.io",
-        source: "Operator",
-      });
-      recalculate(shipment);
-      return structuredClone(shipment);
-    }, 700);
+  /* PATCH /api/shipments/{id}/status */
+
+  async updateStatus(id: string, payload: CreateShipmentEventRequest): Promise<Shipment> {
+    const data = await request<BackendShipment>(`/shipments/${id}/status`, {
+      method: "PATCH",
+
+      body: JSON.stringify({
+        status: mapStatusToBackend(payload.status),
+
+        location: payload.location,
+
+        notes: payload.notes,
+
+        occurredAt: payload.occurredAt,
+      }),
+    });
+
+    return mapShipment(data);
+  },
+
+  /* GET /api/shipments/{id}/timeline */
+
+  async getTimeline(id: string): Promise<TrackingEvent[]> {
+    const data = await request<BackendShipmentEvent[]>(`/shipments/${id}/timeline`);
+
+    return data.map((event) => mapTrackingEvent(event, id));
+  },
+
+  /* PATCH /api/shipments/{id}/assign-driver */
+
+  async assignDriver(id: string, driverId: string): Promise<Shipment> {
+    const data = await request<BackendShipment>(`/shipments/${id}/assign-driver`, {
+      method: "PATCH",
+
+      body: JSON.stringify({
+        driverId: Number(driverId),
+      }),
+    });
+
+    return mapShipment(data);
   },
 };

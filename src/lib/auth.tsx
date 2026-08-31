@@ -39,7 +39,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.ViewMerchants,
     Permission.ViewActivity,
   ],
-  [UserRole.Merchant]: [
+  [UserRole.MerchantUser]: [
     Permission.ViewDashboard,
     Permission.ViewShipments,
     Permission.CreateShipment,
@@ -53,10 +53,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isReady, setIsReady] = useState(false);
 
-  useEffect(() => {
-    setUser(authApi.getCachedUser());
-    setIsReady(true);
-  }, []);
+useEffect(() => {
+  const initializeAuth = async () => {
+    const cachedUser = authApi.getCachedUser();
+
+    if (!cachedUser) {
+      setIsReady(true);
+      return;
+    }
+
+    try {
+      const currentUser = await authApi.me();
+      setUser(currentUser);
+    } catch {
+      authApi.logout();
+      setUser(null);
+    } finally {
+      setIsReady(true);
+    }
+  };
+
+  initializeAuth();
+}, []);
 
   const login = useCallback(async (payload: LoginRequest) => {
     const response = await authApi.login(payload);

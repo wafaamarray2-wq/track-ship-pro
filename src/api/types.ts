@@ -34,7 +34,7 @@ export const RISK_LEVELS: RiskLevel[] = Object.values(RiskLevel);
 export const UserRole = {
   Admin: "Admin",
   Operator: "Operator",
-  Merchant: "Merchant",
+  MerchantUser: "MerchantUser",
 } as const;
 
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
@@ -129,6 +129,8 @@ export interface ShipmentListItem {
   status: ShipmentStatus;
   expectedDeliveryDate: string;
   riskLevel: RiskLevel;
+  driverId?: string;
+  driverName?: string;
   lastUpdatedAt: string;
 }
 
@@ -162,7 +164,8 @@ export interface CreateShipmentEventRequest {
   occurredAt: string;
 }
 
-export type ShipmentSortField = "lastUpdatedAt" | "expectedDeliveryDate" | "trackingNumber" | "status";
+export type ShipmentSortField =
+  "lastUpdatedAt" | "expectedDeliveryDate" | "trackingNumber" | "status";
 
 export interface ShipmentQuery {
   search?: string | undefined;

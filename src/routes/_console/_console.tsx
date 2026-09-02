@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
 
-export const Route = createFileRoute("/_console")({
+export const Route = createFileRoute("/_console/_console")({
   component: ConsoleLayout,
 });
 

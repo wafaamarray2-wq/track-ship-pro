@@ -23,7 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate, formatRelative } from "@/lib/format";
 
-export const Route = createFileRoute("/_console/dashboard")({
+export const Route = createFileRoute("/_console/_console/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — TrackFlow" },

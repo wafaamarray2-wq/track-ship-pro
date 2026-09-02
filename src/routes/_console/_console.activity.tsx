@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateTime, formatRelative } from "@/lib/format";
 
-export const Route = createFileRoute("/_console/activity")({
+export const Route = createFileRoute("/_console/_console/activity")({
   head: () => ({
     meta: [
       { title: "Activity Log — TrackFlow" },

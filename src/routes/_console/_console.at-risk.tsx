@@ -16,7 +16,7 @@ interface AtRiskSearch {
   risk?: string | undefined;
 }
 
-export const Route = createFileRoute("/_console/at-risk")({
+export const Route = createFileRoute("/_console/_console/at-risk")({
   head: () => ({
     meta: [
       { title: "At-Risk Shipments — TrackFlow" },

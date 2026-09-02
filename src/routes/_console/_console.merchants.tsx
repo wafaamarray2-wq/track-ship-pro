@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/format";
+import { usersApi } from "@/api/usersApi";
 
 const merchantSchema = z.object({
   companyName: z
@@ -50,11 +51,22 @@ const merchantSchema = z.object({
   phone: z.string().trim().min(7, "Phone number is required").max(30, "Phone number is too long"),
 
   isActive: z.boolean(),
+
+  // Merchant login account
+  loginFullName: z
+    .string()
+    .trim()
+    .min(2, "Full name is required")
+    .max(200, "Full name is too long"),
+
+  loginEmail: z.string().trim().email("Enter a valid login email address"),
+
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 type MerchantFormValues = z.infer<typeof merchantSchema>;
 
-export const Route = createFileRoute("/_console/merchants")({
+export const Route = createFileRoute("/_console/_console/merchants")({
   head: () => ({
     meta: [
       { title: "Merchants — TrackFlow" },
@@ -104,11 +116,28 @@ function MerchantsPage() {
       email: "",
       phone: "",
       isActive: true,
+
+      loginFullName: "",
+      loginEmail: "",
+      password: "",
     },
   });
 
   const createMerchant = useMutation({
-    mutationFn: (values: MerchantFormValues) => merchantsApi.create(values),
+    mutationFn: async (values: MerchantFormValues) => {
+      // 1. Create merchant company
+      const merchant = await merchantsApi.create(values);
+
+      // 2. Create merchant login account
+      await usersApi.createMerchantUser({
+        merchantId: Number(merchant.id),
+        fullName: values.loginFullName,
+        email: values.loginEmail,
+        password: values.password,
+      });
+
+      return merchant;
+    },
 
     onSuccess: (merchant) => {
       void queryClient.invalidateQueries({
@@ -116,7 +145,7 @@ function MerchantsPage() {
       });
 
       toast.success("Merchant created", {
-        description: `${merchant.companyName} was added successfully.`,
+        description: `${merchant.companyName} and its login account were created successfully.`,
       });
 
       form.reset({
@@ -125,6 +154,9 @@ function MerchantsPage() {
         email: "",
         phone: "",
         isActive: true,
+        loginFullName: "",
+        loginEmail: "",
+        password: "",
       });
 
       setAddMerchantOpen(false);
@@ -318,7 +350,7 @@ function MerchantsPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add merchant</DialogTitle>
 
@@ -329,99 +361,155 @@ function MerchantsPage() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(submitMerchant)} className="space-y-4" noValidate>
-              <FormField
-                control={form.control}
-                name="companyName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company name</FormLabel>
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold">Merchant information</h3>
+                <FormField
+                  control={form.control}
+                  name="companyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Company name</FormLabel>
 
-                    <FormControl>
-                      <Input placeholder="e.g. Northwind Supply Co." {...field} />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="contactName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contact name</FormLabel>
-
-                    <FormControl>
-                      <Input placeholder="e.g. John Smith" {...field} />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-
-                    <FormControl>
-                      <Input type="email" placeholder="merchant@example.com" {...field} />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-
-                    <FormControl>
-                      <Input type="tel" placeholder="+1 555 123 4567" {...field} />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center gap-3 rounded-md border p-3">
                       <FormControl>
-                        <input
-                          type="checkbox"
-                          checked={field.value}
-                          onChange={field.onChange}
-                          className="size-4"
-                        />
+                        <Input placeholder="e.g. Northwind Supply Co." {...field} />
                       </FormControl>
 
-                      <div>
-                        <FormLabel className="cursor-pointer">Active merchant</FormLabel>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                        <p className="text-sm text-muted-foreground">
-                          Active merchants can be selected when creating shipments.
-                        </p>
+                <FormField
+                  control={form.control}
+                  name="contactName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contact name</FormLabel>
+
+                      <FormControl>
+                        <Input placeholder="e.g. John Smith" {...field} />
+                      </FormControl>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+
+                      <FormControl>
+                        <Input type="email" placeholder="merchant@example.com" {...field} />
+                      </FormControl>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
+
+                      <FormControl>
+                        <Input type="tel" placeholder="+1 555 123 4567" {...field} />
+                      </FormControl>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <h3 className="text-sm font-semibold">Login account</h3>
+                <FormField
+                  control={form.control}
+                  name="loginFullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Login full name</FormLabel>
+
+                      <FormControl>
+                        <Input placeholder="e.g. John Smith" {...field} />
+                      </FormControl>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="loginEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Login email</FormLabel>
+
+                      <FormControl>
+                        <Input type="email" placeholder="merchant@example.com" {...field} />
+                      </FormControl>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Login password</FormLabel>
+
+                      <FormControl>
+                        <Input type="password" placeholder="At least 8 characters" {...field} />
+                      </FormControl>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <h3 className="text-sm font-semibold">Status</h3>
+                <FormField
+                  control={form.control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-3 rounded-md border p-3">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={field.onChange}
+                            className="size-4"
+                          />
+                        </FormControl>
+
+                        <div>
+                          <FormLabel className="cursor-pointer">Active merchant</FormLabel>
+
+                          <p className="text-sm text-muted-foreground">
+                            Active merchants can be selected when creating shipments.
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <DialogFooter>
                 <Button
                   type="button"

@@ -7,9 +7,10 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { authApi } from "@/api/authApi";
 import { merchantsApi } from "@/api/merchantsApi";
 import { shipmentsApi } from "@/api/shipmentsApi";
-import type { CreateShipmentRequest } from "@/api/types";
+import { UserRole, type CreateShipmentRequest } from "@/api/types";
 import { PageHeader } from "@/components/common/page-header";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-export const Route = createFileRoute("/_console/shipments/new")({
+export const Route = createFileRoute("/_console/_console/shipments/new")({
   head: () => ({
     meta: [
       { title: "Create shipment — TrackFlow" },
@@ -104,15 +105,20 @@ function CreateShipmentPage() {
   const queryClient = useQueryClient();
   const [apiError, setApiError] = useState<string | null>(null);
 
+  const currentUser = authApi.getCachedUser();
+
+  const isMerchantUser = currentUser?.role === UserRole.MerchantUser;
+
   const merchants = useQuery({
     queryKey: ["merchants", "options"],
     queryFn: () => merchantsApi.options(),
+    enabled: !isMerchantUser,
   });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      merchantId: "",
+      merchantId: isMerchantUser ? (currentUser?.merchantId ?? "") : "",
       recipientName: "",
       recipientPhone: "",
       recipientEmail: "",
@@ -214,30 +220,35 @@ function CreateShipmentPage() {
               render={({ field }) => (
                 <FormItem className="sm:col-span-2">
                   <FormLabel>Merchant</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            merchants.isPending ? "Loading merchants…" : "Select a merchant"
-                          }
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {(merchants.data ?? [])
-                        .filter((merchant) => merchant.isActive)
-                        .map((merchant) => {
-                          console.log("MERCHANT:", merchant);
 
-                          return (
+                  {isMerchantUser ? (
+                    <FormControl>
+                      <Input value={currentUser?.merchantId ?? ""} readOnly disabled />
+                    </FormControl>
+                  ) : (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              merchants.isPending ? "Loading merchants…" : "Select a merchant"
+                            }
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+
+                      <SelectContent>
+                        {(merchants.data ?? [])
+                          .filter((merchant) => merchant.isActive)
+                          .map((merchant) => (
                             <SelectItem key={merchant.id} value={String(merchant.id)}>
                               {merchant.companyName}
                             </SelectItem>
-                          );
-                        })}
-                    </SelectContent>
-                  </Select>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
                   <FormMessage />
                 </FormItem>
               )}

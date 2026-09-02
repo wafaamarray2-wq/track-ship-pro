@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { authApi } from "@/api/authApi";
 import { UserRole, type AuthUser, type LoginRequest } from "@/api/types";
@@ -12,16 +20,37 @@ interface AuthContextValue {
 }
 
 /** Frontend permission map — mirrors the roles the API will enforce later. */
+
 export const Permission = {
+  // Dashboard
   ViewDashboard: "dashboard:view",
+
+  // Shipments
   ViewShipments: "shipments:view",
   CreateShipment: "shipments:create",
   UpdateShipmentStatus: "shipments:update-status",
-  CancelShipment: "shipments:cancel",
+
+  // At-Risk
   ViewAtRisk: "at-risk:view",
+
+  // Merchants
   ViewMerchants: "merchants:view",
   ManageMerchants: "merchants:manage",
+
+  // Drivers
+  ViewDrivers: "drivers:view",
+  ManageDrivers: "drivers:manage",
+  AssignDriver: "drivers:assign",
+  ViewDeliveryCompanies: "delivery-companies:view",
+  // Shipment operations
+  ViewShipmentTimeline: "shipments:timeline:view",
+  ManageDeliveryAttempts: "shipments:delivery-attempts",
+  ManageProofOfDelivery: "shipments:proof-of-delivery",
+
+  // Activity
   ViewActivity: "activity:view",
+
+  // Settings
   ManageSettings: "settings:manage",
 } as const;
 
@@ -29,20 +58,47 @@ export type Permission = (typeof Permission)[keyof typeof Permission];
 
 const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   [UserRole.Admin]: Object.values(Permission),
+
   [UserRole.Operator]: [
+    // Dashboard
     Permission.ViewDashboard,
+
+    // Shipments
     Permission.ViewShipments,
     Permission.CreateShipment,
     Permission.UpdateShipmentStatus,
-    Permission.CancelShipment,
+    Permission.ViewShipmentTimeline,
+
+    // At-Risk
     Permission.ViewAtRisk,
+
+    // Merchants
     Permission.ViewMerchants,
+    Permission.ManageMerchants,
+
+    // Drivers
+    Permission.ViewDrivers,
+    Permission.ManageDrivers,
+    Permission.AssignDriver,
+
+    // Delivery operations
+    Permission.ManageDeliveryAttempts,
+    Permission.ManageProofOfDelivery,
+
+    // Activity
     Permission.ViewActivity,
   ],
+
   [UserRole.MerchantUser]: [
+    // Dashboard
     Permission.ViewDashboard,
+
+    // Own shipments
     Permission.ViewShipments,
     Permission.CreateShipment,
+    Permission.ViewShipmentTimeline,
+
+    // At-Risk
     Permission.ViewAtRisk,
   ],
 };
@@ -53,28 +109,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isReady, setIsReady] = useState(false);
 
-useEffect(() => {
-  const initializeAuth = async () => {
-    const cachedUser = authApi.getCachedUser();
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const cachedUser = authApi.getCachedUser();
 
-    if (!cachedUser) {
-      setIsReady(true);
-      return;
-    }
+      if (!cachedUser) {
+        setIsReady(true);
+        return;
+      }
 
-    try {
-      const currentUser = await authApi.me();
-      setUser(currentUser);
-    } catch {
-      authApi.logout();
-      setUser(null);
-    } finally {
-      setIsReady(true);
-    }
-  };
+      try {
+        const currentUser = await authApi.me();
+        setUser(currentUser);
+      } catch {
+        authApi.logout();
+        setUser(null);
+      } finally {
+        setIsReady(true);
+      }
+    };
 
-  initializeAuth();
-}, []);
+    initializeAuth();
+  }, []);
 
   const login = useCallback(async (payload: LoginRequest) => {
     const response = await authApi.login(payload);
@@ -92,7 +148,10 @@ useEffect(() => {
     [user],
   );
 
-  const value = useMemo(() => ({ user, isReady, login, logout, can }), [user, isReady, login, logout, can]);
+  const value = useMemo(
+    () => ({ user, isReady, login, logout, can }),
+    [user, isReady, login, logout, can],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

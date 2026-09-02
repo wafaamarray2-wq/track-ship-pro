@@ -1,5 +1,14 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Activity, AlertTriangle, LayoutDashboard, Package, Settings, Store, Truck } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  LayoutDashboard,
+  Package,
+  Settings,
+  Store,
+  Truck,
+  Users,
+} from "lucide-react";
 
 import { Permission, useAuth } from "@/lib/auth";
 import {
@@ -25,13 +34,25 @@ interface NavItem {
 }
 
 const OPERATIONS: NavItem[] = [
-  { title: "Dashboard", to: "/dashboard", icon: LayoutDashboard, permission: Permission.ViewDashboard },
+  {
+    title: "Dashboard",
+    to: "/dashboard",
+    icon: LayoutDashboard,
+    permission: Permission.ViewDashboard,
+  },
   { title: "Shipments", to: "/shipments", icon: Package, permission: Permission.ViewShipments },
-  { title: "At-Risk Shipments", to: "/at-risk", icon: AlertTriangle, permission: Permission.ViewAtRisk },
+  {
+    title: "At-Risk Shipments",
+    to: "/at-risk",
+    icon: AlertTriangle,
+    permission: Permission.ViewAtRisk,
+  },
 ];
 
 const NETWORK: NavItem[] = [
   { title: "Merchants", to: "/merchants", icon: Store, permission: Permission.ViewMerchants },
+  { title: "Delivery Companies", to: "/delivery-companies", icon: Truck, permission: Permission.ViewDeliveryCompanies },
+  { title: "Drivers", to: "/drivers", icon: Users, permission: Permission.ViewDrivers },
   { title: "Activity Log", to: "/activity", icon: Activity, permission: Permission.ViewActivity },
   { title: "Settings", to: "/settings", icon: Settings, permission: Permission.ManageSettings },
 ];
@@ -78,7 +99,9 @@ export function AppSidebar() {
           {!collapsed ? (
             <span className="min-w-0">
               <span className="block truncate text-sm font-semibold">TrackFlow</span>
-              <span className="block truncate text-xs text-muted-foreground">Shipment intelligence</span>
+              <span className="block truncate text-xs text-muted-foreground">
+                Shipment intelligence
+              </span>
             </span>
           ) : null}
         </Link>

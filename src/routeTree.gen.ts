@@ -10,24 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ConsoleRouteImport } from './routes/_console'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as TrackRouteImport } from './routes/track'
-import { Route as ConsoleActivityRouteImport } from './routes/_console.activity'
-import { Route as ConsoleAtRiskRouteImport } from './routes/_console.at-risk'
-import { Route as ConsoleDashboardRouteImport } from './routes/_console.dashboard'
-import { Route as ConsoleMerchantsRouteImport } from './routes/_console.merchants'
-import { Route as ConsoleShipmentsIndexRouteImport } from './routes/_console.shipments.index'
-import { Route as ConsoleShipmentsShipmentIdRouteImport } from './routes/_console.shipments.$shipmentId'
-import { Route as ConsoleShipmentsNewRouteImport } from './routes/_console.shipments.new'
+import { Route as ConsoleConsoleRouteImport } from './routes/_console/_console'
+import { Route as ConsoleConsoleActivityRouteImport } from './routes/_console/_console.activity'
+import { Route as ConsoleConsoleAtRiskRouteImport } from './routes/_console/_console.at-risk'
+import { Route as ConsoleConsoleDashboardRouteImport } from './routes/_console/_console.dashboard'
+import { Route as ConsoleConsoleDriversRouteImport } from './routes/_console/_console/drivers'
+import { Route as ConsoleConsoleMerchantsRouteImport } from './routes/_console/_console.merchants'
+import { Route as ConsoleConsoleConsoleDeliveryCompaniesRouteImport } from './routes/_console/_console/_console.delivery-companies'
+import { Route as ConsoleConsoleShipmentsIndexRouteImport } from './routes/_console/_console.shipments.index'
+import { Route as ConsoleConsoleShipmentsShipmentIdRouteImport } from './routes/_console/_console.shipments.$shipmentId'
+import { Route as ConsoleConsoleShipmentsNewRouteImport } from './routes/_console/_console.shipments.new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConsoleRoute = ConsoleRouteImport.update({
-  id: '/_console',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -40,80 +38,103 @@ const TrackRoute = TrackRouteImport.update({
   path: '/track',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ConsoleActivityRoute = ConsoleActivityRouteImport.update({
+const ConsoleConsoleRoute = ConsoleConsoleRouteImport.update({
+  id: '/_console/_console',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsoleConsoleActivityRoute = ConsoleConsoleActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
-  getParentRoute: () => ConsoleRoute,
+  getParentRoute: () => ConsoleConsoleRoute,
 } as any)
-const ConsoleAtRiskRoute = ConsoleAtRiskRouteImport.update({
+const ConsoleConsoleAtRiskRoute = ConsoleConsoleAtRiskRouteImport.update({
   id: '/at-risk',
   path: '/at-risk',
-  getParentRoute: () => ConsoleRoute,
+  getParentRoute: () => ConsoleConsoleRoute,
 } as any)
-const ConsoleDashboardRoute = ConsoleDashboardRouteImport.update({
+const ConsoleConsoleDashboardRoute = ConsoleConsoleDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => ConsoleRoute,
+  getParentRoute: () => ConsoleConsoleRoute,
 } as any)
-const ConsoleMerchantsRoute = ConsoleMerchantsRouteImport.update({
+const ConsoleConsoleDriversRoute = ConsoleConsoleDriversRouteImport.update({
+  id: '/drivers',
+  path: '/drivers',
+  getParentRoute: () => ConsoleConsoleRoute,
+} as any)
+const ConsoleConsoleMerchantsRoute = ConsoleConsoleMerchantsRouteImport.update({
   id: '/merchants',
   path: '/merchants',
-  getParentRoute: () => ConsoleRoute,
+  getParentRoute: () => ConsoleConsoleRoute,
 } as any)
-const ConsoleShipmentsIndexRoute = ConsoleShipmentsIndexRouteImport.update({
-  id: '/shipments/',
-  path: '/shipments/',
-  getParentRoute: () => ConsoleRoute,
-} as any)
-const ConsoleShipmentsShipmentIdRoute =
-  ConsoleShipmentsShipmentIdRouteImport.update({
+const ConsoleConsoleConsoleDeliveryCompaniesRoute =
+  ConsoleConsoleConsoleDeliveryCompaniesRouteImport.update({
+    id: '/_console/delivery-companies',
+    path: '/delivery-companies',
+    getParentRoute: () => ConsoleConsoleRoute,
+  } as any)
+const ConsoleConsoleShipmentsIndexRoute =
+  ConsoleConsoleShipmentsIndexRouteImport.update({
+    id: '/shipments/',
+    path: '/shipments/',
+    getParentRoute: () => ConsoleConsoleRoute,
+  } as any)
+const ConsoleConsoleShipmentsShipmentIdRoute =
+  ConsoleConsoleShipmentsShipmentIdRouteImport.update({
     id: '/shipments/$shipmentId',
     path: '/shipments/$shipmentId',
-    getParentRoute: () => ConsoleRoute,
+    getParentRoute: () => ConsoleConsoleRoute,
   } as any)
-const ConsoleShipmentsNewRoute = ConsoleShipmentsNewRouteImport.update({
-  id: '/shipments/new',
-  path: '/shipments/new',
-  getParentRoute: () => ConsoleRoute,
-} as any)
+const ConsoleConsoleShipmentsNewRoute =
+  ConsoleConsoleShipmentsNewRouteImport.update({
+    id: '/shipments/new',
+    path: '/shipments/new',
+    getParentRoute: () => ConsoleConsoleRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/track': typeof TrackRoute
-  '/activity': typeof ConsoleActivityRoute
-  '/at-risk': typeof ConsoleAtRiskRoute
-  '/dashboard': typeof ConsoleDashboardRoute
-  '/merchants': typeof ConsoleMerchantsRoute
-  '/shipments/$shipmentId': typeof ConsoleShipmentsShipmentIdRoute
-  '/shipments/new': typeof ConsoleShipmentsNewRoute
-  '/shipments/': typeof ConsoleShipmentsIndexRoute
+  '/activity': typeof ConsoleConsoleActivityRoute
+  '/at-risk': typeof ConsoleConsoleAtRiskRoute
+  '/dashboard': typeof ConsoleConsoleDashboardRoute
+  '/drivers': typeof ConsoleConsoleDriversRoute
+  '/merchants': typeof ConsoleConsoleMerchantsRoute
+  '/delivery-companies': typeof ConsoleConsoleConsoleDeliveryCompaniesRoute
+  '/shipments/$shipmentId': typeof ConsoleConsoleShipmentsShipmentIdRoute
+  '/shipments/new': typeof ConsoleConsoleShipmentsNewRoute
+  '/shipments/': typeof ConsoleConsoleShipmentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/track': typeof TrackRoute
-  '/activity': typeof ConsoleActivityRoute
-  '/at-risk': typeof ConsoleAtRiskRoute
-  '/dashboard': typeof ConsoleDashboardRoute
-  '/merchants': typeof ConsoleMerchantsRoute
-  '/shipments/$shipmentId': typeof ConsoleShipmentsShipmentIdRoute
-  '/shipments/new': typeof ConsoleShipmentsNewRoute
-  '/shipments': typeof ConsoleShipmentsIndexRoute
+  '/activity': typeof ConsoleConsoleActivityRoute
+  '/at-risk': typeof ConsoleConsoleAtRiskRoute
+  '/dashboard': typeof ConsoleConsoleDashboardRoute
+  '/drivers': typeof ConsoleConsoleDriversRoute
+  '/merchants': typeof ConsoleConsoleMerchantsRoute
+  '/delivery-companies': typeof ConsoleConsoleConsoleDeliveryCompaniesRoute
+  '/shipments/$shipmentId': typeof ConsoleConsoleShipmentsShipmentIdRoute
+  '/shipments/new': typeof ConsoleConsoleShipmentsNewRoute
+  '/shipments': typeof ConsoleConsoleShipmentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_console': typeof ConsoleRouteWithChildren
   '/login': typeof LoginRoute
   '/track': typeof TrackRoute
-  '/_console/activity': typeof ConsoleActivityRoute
-  '/_console/at-risk': typeof ConsoleAtRiskRoute
-  '/_console/dashboard': typeof ConsoleDashboardRoute
-  '/_console/merchants': typeof ConsoleMerchantsRoute
-  '/_console/shipments/$shipmentId': typeof ConsoleShipmentsShipmentIdRoute
-  '/_console/shipments/new': typeof ConsoleShipmentsNewRoute
-  '/_console/shipments/': typeof ConsoleShipmentsIndexRoute
+  '/_console/_console': typeof ConsoleConsoleRouteWithChildren
+  '/_console/_console/activity': typeof ConsoleConsoleActivityRoute
+  '/_console/_console/at-risk': typeof ConsoleConsoleAtRiskRoute
+  '/_console/_console/dashboard': typeof ConsoleConsoleDashboardRoute
+  '/_console/_console/drivers': typeof ConsoleConsoleDriversRoute
+  '/_console/_console/merchants': typeof ConsoleConsoleMerchantsRoute
+  '/_console/_console/_console/delivery-companies': typeof ConsoleConsoleConsoleDeliveryCompaniesRoute
+  '/_console/_console/shipments/$shipmentId': typeof ConsoleConsoleShipmentsShipmentIdRoute
+  '/_console/_console/shipments/new': typeof ConsoleConsoleShipmentsNewRoute
+  '/_console/_console/shipments/': typeof ConsoleConsoleShipmentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -124,7 +145,9 @@ export interface FileRouteTypes {
     | '/activity'
     | '/at-risk'
     | '/dashboard'
+    | '/drivers'
     | '/merchants'
+    | '/delivery-companies'
     | '/shipments/$shipmentId'
     | '/shipments/new'
     | '/shipments/'
@@ -136,30 +159,34 @@ export interface FileRouteTypes {
     | '/activity'
     | '/at-risk'
     | '/dashboard'
+    | '/drivers'
     | '/merchants'
+    | '/delivery-companies'
     | '/shipments/$shipmentId'
     | '/shipments/new'
     | '/shipments'
   id:
     | '__root__'
     | '/'
-    | '/_console'
     | '/login'
     | '/track'
-    | '/_console/activity'
-    | '/_console/at-risk'
-    | '/_console/dashboard'
-    | '/_console/merchants'
-    | '/_console/shipments/$shipmentId'
-    | '/_console/shipments/new'
-    | '/_console/shipments/'
+    | '/_console/_console'
+    | '/_console/_console/activity'
+    | '/_console/_console/at-risk'
+    | '/_console/_console/dashboard'
+    | '/_console/_console/drivers'
+    | '/_console/_console/merchants'
+    | '/_console/_console/_console/delivery-companies'
+    | '/_console/_console/shipments/$shipmentId'
+    | '/_console/_console/shipments/new'
+    | '/_console/_console/shipments/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ConsoleRoute: typeof ConsoleRouteWithChildren
   LoginRoute: typeof LoginRoute
   TrackRoute: typeof TrackRoute
+  ConsoleConsoleRoute: typeof ConsoleConsoleRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -169,13 +196,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_console': {
-      id: '/_console'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof ConsoleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -192,86 +212,114 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_console/activity': {
-      id: '/_console/activity'
+    '/_console/_console': {
+      id: '/_console/_console'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof ConsoleConsoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_console/_console/activity': {
+      id: '/_console/_console/activity'
       path: '/activity'
       fullPath: '/activity'
-      preLoaderRoute: typeof ConsoleActivityRouteImport
-      parentRoute: typeof ConsoleRoute
+      preLoaderRoute: typeof ConsoleConsoleActivityRouteImport
+      parentRoute: typeof ConsoleConsoleRoute
     }
-    '/_console/at-risk': {
-      id: '/_console/at-risk'
+    '/_console/_console/at-risk': {
+      id: '/_console/_console/at-risk'
       path: '/at-risk'
       fullPath: '/at-risk'
-      preLoaderRoute: typeof ConsoleAtRiskRouteImport
-      parentRoute: typeof ConsoleRoute
+      preLoaderRoute: typeof ConsoleConsoleAtRiskRouteImport
+      parentRoute: typeof ConsoleConsoleRoute
     }
-    '/_console/dashboard': {
-      id: '/_console/dashboard'
+    '/_console/_console/dashboard': {
+      id: '/_console/_console/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
-      preLoaderRoute: typeof ConsoleDashboardRouteImport
-      parentRoute: typeof ConsoleRoute
+      preLoaderRoute: typeof ConsoleConsoleDashboardRouteImport
+      parentRoute: typeof ConsoleConsoleRoute
     }
-    '/_console/merchants': {
-      id: '/_console/merchants'
+    '/_console/_console/drivers': {
+      id: '/_console/_console/drivers'
+      path: '/drivers'
+      fullPath: '/drivers'
+      preLoaderRoute: typeof ConsoleConsoleDriversRouteImport
+      parentRoute: typeof ConsoleConsoleRoute
+    }
+    '/_console/_console/merchants': {
+      id: '/_console/_console/merchants'
       path: '/merchants'
       fullPath: '/merchants'
-      preLoaderRoute: typeof ConsoleMerchantsRouteImport
-      parentRoute: typeof ConsoleRoute
+      preLoaderRoute: typeof ConsoleConsoleMerchantsRouteImport
+      parentRoute: typeof ConsoleConsoleRoute
     }
-    '/_console/shipments/': {
-      id: '/_console/shipments/'
+    '/_console/_console/_console/delivery-companies': {
+      id: '/_console/_console/_console/delivery-companies'
+      path: '/delivery-companies'
+      fullPath: '/delivery-companies'
+      preLoaderRoute: typeof ConsoleConsoleConsoleDeliveryCompaniesRouteImport
+      parentRoute: typeof ConsoleConsoleRoute
+    }
+    '/_console/_console/shipments/': {
+      id: '/_console/_console/shipments/'
       path: '/shipments'
       fullPath: '/shipments/'
-      preLoaderRoute: typeof ConsoleShipmentsIndexRouteImport
-      parentRoute: typeof ConsoleRoute
+      preLoaderRoute: typeof ConsoleConsoleShipmentsIndexRouteImport
+      parentRoute: typeof ConsoleConsoleRoute
     }
-    '/_console/shipments/$shipmentId': {
-      id: '/_console/shipments/$shipmentId'
+    '/_console/_console/shipments/$shipmentId': {
+      id: '/_console/_console/shipments/$shipmentId'
       path: '/shipments/$shipmentId'
       fullPath: '/shipments/$shipmentId'
-      preLoaderRoute: typeof ConsoleShipmentsShipmentIdRouteImport
-      parentRoute: typeof ConsoleRoute
+      preLoaderRoute: typeof ConsoleConsoleShipmentsShipmentIdRouteImport
+      parentRoute: typeof ConsoleConsoleRoute
     }
-    '/_console/shipments/new': {
-      id: '/_console/shipments/new'
+    '/_console/_console/shipments/new': {
+      id: '/_console/_console/shipments/new'
       path: '/shipments/new'
       fullPath: '/shipments/new'
-      preLoaderRoute: typeof ConsoleShipmentsNewRouteImport
-      parentRoute: typeof ConsoleRoute
+      preLoaderRoute: typeof ConsoleConsoleShipmentsNewRouteImport
+      parentRoute: typeof ConsoleConsoleRoute
     }
   }
 }
 
-interface ConsoleRouteChildren {
-  ConsoleActivityRoute: typeof ConsoleActivityRoute
-  ConsoleAtRiskRoute: typeof ConsoleAtRiskRoute
-  ConsoleDashboardRoute: typeof ConsoleDashboardRoute
-  ConsoleMerchantsRoute: typeof ConsoleMerchantsRoute
-  ConsoleShipmentsShipmentIdRoute: typeof ConsoleShipmentsShipmentIdRoute
-  ConsoleShipmentsNewRoute: typeof ConsoleShipmentsNewRoute
-  ConsoleShipmentsIndexRoute: typeof ConsoleShipmentsIndexRoute
+interface ConsoleConsoleRouteChildren {
+  ConsoleConsoleActivityRoute: typeof ConsoleConsoleActivityRoute
+  ConsoleConsoleAtRiskRoute: typeof ConsoleConsoleAtRiskRoute
+  ConsoleConsoleDashboardRoute: typeof ConsoleConsoleDashboardRoute
+  ConsoleConsoleDriversRoute: typeof ConsoleConsoleDriversRoute
+  ConsoleConsoleMerchantsRoute: typeof ConsoleConsoleMerchantsRoute
+  ConsoleConsoleConsoleDeliveryCompaniesRoute: typeof ConsoleConsoleConsoleDeliveryCompaniesRoute
+  ConsoleConsoleShipmentsShipmentIdRoute: typeof ConsoleConsoleShipmentsShipmentIdRoute
+  ConsoleConsoleShipmentsNewRoute: typeof ConsoleConsoleShipmentsNewRoute
+  ConsoleConsoleShipmentsIndexRoute: typeof ConsoleConsoleShipmentsIndexRoute
 }
 
-const ConsoleRouteChildren: ConsoleRouteChildren = {
-  ConsoleActivityRoute: ConsoleActivityRoute,
-  ConsoleAtRiskRoute: ConsoleAtRiskRoute,
-  ConsoleDashboardRoute: ConsoleDashboardRoute,
-  ConsoleMerchantsRoute: ConsoleMerchantsRoute,
-  ConsoleShipmentsShipmentIdRoute: ConsoleShipmentsShipmentIdRoute,
-  ConsoleShipmentsNewRoute: ConsoleShipmentsNewRoute,
-  ConsoleShipmentsIndexRoute: ConsoleShipmentsIndexRoute,
+const ConsoleConsoleRouteChildren: ConsoleConsoleRouteChildren = {
+  ConsoleConsoleActivityRoute: ConsoleConsoleActivityRoute,
+  ConsoleConsoleAtRiskRoute: ConsoleConsoleAtRiskRoute,
+  ConsoleConsoleDashboardRoute: ConsoleConsoleDashboardRoute,
+  ConsoleConsoleDriversRoute: ConsoleConsoleDriversRoute,
+  ConsoleConsoleMerchantsRoute: ConsoleConsoleMerchantsRoute,
+  ConsoleConsoleConsoleDeliveryCompaniesRoute:
+    ConsoleConsoleConsoleDeliveryCompaniesRoute,
+  ConsoleConsoleShipmentsShipmentIdRoute:
+    ConsoleConsoleShipmentsShipmentIdRoute,
+  ConsoleConsoleShipmentsNewRoute: ConsoleConsoleShipmentsNewRoute,
+  ConsoleConsoleShipmentsIndexRoute: ConsoleConsoleShipmentsIndexRoute,
 }
 
-const ConsoleRouteWithChildren =
-  ConsoleRoute._addFileChildren(ConsoleRouteChildren)
+const ConsoleConsoleRouteWithChildren = ConsoleConsoleRoute._addFileChildren(
+  ConsoleConsoleRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ConsoleRoute: ConsoleRouteWithChildren,
   LoginRoute: LoginRoute,
   TrackRoute: TrackRoute,
+  ConsoleConsoleRoute: ConsoleConsoleRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

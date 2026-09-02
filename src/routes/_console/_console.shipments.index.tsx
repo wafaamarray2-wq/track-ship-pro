@@ -52,7 +52,7 @@ interface ShipmentSearch {
 const ALL = "__all__";
 const PAGE_SIZE = 10;
 
-export const Route = createFileRoute("/_console/shipments/")({
+export const Route = createFileRoute("/_console/_console/shipments/")({
   head: () => ({
     meta: [
       { title: "Shipments — TrackFlow" },

@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatDate, formatDateTime, formatRelative } from "@/lib/format";
 import { isTerminal } from "@/lib/shipment-status";
 
-export const Route = createFileRoute("/_console/shipments/$shipmentId")({
+export const Route = createFileRoute("/_console/_console/shipments/$shipmentId")({
   head: () => ({
     meta: [
       { title: "Shipment details — TrackFlow" },
